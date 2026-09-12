@@ -94,7 +94,8 @@ for i in range(3):
 
 # ── 6. Save ───────────────────────────────────────────────
 df[['clean_message', 'label']].to_csv('roman_urdu_clean.csv', index=False)
-print("\n✅ Saved to roman_urdu_clean.csv")print(f"Duplicates:{df.duplicated(subset="clean_message").sum()}")
+print("\n✅ Saved to roman_urdu_clean.csv")
+print(f"Duplicates:{df.duplicated(subset="clean_message").sum()}")
 # ── 4. Remove bad rows ────────────────────────────────────
 # Remove empty messages
 df = df[df['clean_message'].str.len() > 0]

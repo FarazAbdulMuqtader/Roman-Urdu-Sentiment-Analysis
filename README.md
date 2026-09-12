@@ -1,3 +1,4 @@
+<img width="1258" height="616" alt="Screen Shot 2026-09-12 at 11 51 08 AM" src="https://github.com/user-attachments/assets/440f33bf-4cb1-4ed2-9e34-449249139d10" />
 # Roman Urdu NLP — Sentiment Analysis
 
 🚀 **[Try the live demo](https://huggingface.co/spaces/FarazAbdulMuqtader/roman-urdu-sentiment-demo)**

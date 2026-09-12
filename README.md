@@ -1,5 +1,7 @@
 # Roman Urdu NLP — Sentiment Analysis
 
+🚀 **[Try the live demo](https://huggingface.co/spaces/FarazAbdulMuqtader/roman-urdu-sentiment-demo)**
+
 A sentiment classification model for Roman Urdu (Urdu written in Latin script), fine-tuned on XLM-RoBERTa. Built to address a low-resource, code-mixed language largely underserved by mainstream NLP tooling.
 
 ## Overview

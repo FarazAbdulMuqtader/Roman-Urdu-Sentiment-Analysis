@@ -184,7 +184,8 @@ print(classification_report(
 # ── Save the final trained model ──────────────────────────
 model.save_pretrained('./trained_model')
 tokenizer.save_pretrained('./trained_model')
-print("\n✅ Final model saved to ./trained_model")        return len(self.texts)
+print("\n✅ Final model saved to ./trained_model")        
+return len(self.texts)
 
     def __getitem__(self, idx):
         encoding = tokenizer(

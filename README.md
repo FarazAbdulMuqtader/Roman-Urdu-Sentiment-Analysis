@@ -28,9 +28,34 @@ Roman Urdu is the informal script most commonly used across Pakistani social med
 - scikit-learn
 - Kaggle (T4 GPU training)
 
+## Results
+
+Fine-tuned on the full ~129K-row dataset (103,501 train / 25,876 held-out test, stratified 80/20 split), 3 epochs on a Kaggle T4 GPU.
+
+**Overall accuracy: 81%**
+
+| Label    | Precision | Recall | F1-score | Support |
+|----------|-----------|--------|----------|---------|
+| Positive | 0.81      | 0.82   | 0.82     | 7,252   |
+| Negative | 0.84      | 0.85   | 0.85     | 10,504  |
+| Neutral  | 0.78      | 0.76   | 0.77     | 8,120   |
+| **Accuracy** | | | **0.81** | 25,876 |
+| Macro avg | 0.81 | 0.81 | 0.81 | 25,876 |
+| Weighted avg | 0.81 | 0.81 | 0.81 | 25,876 |
+
+**Confusion matrix** (rows = actual, columns = predicted):
+
+|          | Positive | Negative | Neutral |
+|----------|----------|----------|---------|
+| Positive | 5,977    | 508      | 767     |
+| Negative | 588      | 8,920    | 996     |
+| Neutral  | 802      | 1,177    | 6,141   |
+
+Most confusion happens between Neutral and the other two classes — expected, since neutral sentiment in short, code-mixed social text is inherently ambiguous (sarcasm, mild opinions, and rhetorical statements often blur the line). Negative is the most reliably distinguished class.
+
 ## Status
 
-Model has completed preprocessing, tokenization, and fine-tuning; evaluation is in progress. Published on Hugging Face.
+Preprocessing, tokenization, fine-tuning, and evaluation are complete on the full dataset. Published on Hugging Face, with a live interactive demo on Spaces.
 
 ## Why This Project
 

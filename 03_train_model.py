@@ -5,6 +5,9 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from sklearn.model_selection import train_test_split
 from torch.optim import AdamW
 
+# Reproducibility
+torch.manual_seed(42)
+
 # ── 1. Load CSV ───────────────────────────────────────────
 df = pd.read_csv('roman_urdu_clean.csv')
 
@@ -14,20 +17,20 @@ df['label_id'] = df['label'].map(label_map)
 df = df.dropna(subset=['label_id'])
 df['label_id'] = df['label_id'].astype(int)
 
-# ── 3. Use small sample for today ─────────────────────────
-# 3000 rows only — just to verify training works
-# We'll do full training after this runs clean
-df = df.sample(3000, random_state=42)
-print(f"Using {len(df)} rows for test run")
+# FIX: removed the df.sample(3000, ...) test-run limit — we now train on
+# the full cleaned dataset (~129K rows), which is what the README claims.
+print(f"Using {len(df)} rows for training")
 
-# ── 4. Split 80/20 ────────────────────────────────────────
-train_df, test_df = train_test_split(df,test_size=0.2,random_state=42)
+# ── 3. Split 80/20 ────────────────────────────────────────
+train_df, test_df = train_test_split(
+    df, test_size=0.2, random_state=42, stratify=df['label_id']
+)
 print(f"Train: {len(train_df)} | Test: {len(test_df)}")
 
-# ── 5. Load tokenizer ─────────────────────────────────────
+# ── 4. Load tokenizer ─────────────────────────────────────
 tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-base")
 
-# ── 6. Dataset class ──────────────────────────────────────
+# ── 5. Dataset class ──────────────────────────────────────
 class UrduSentimentDataset(Dataset):
     def __init__(self, texts, labels):
         self.texts  = texts.tolist()
@@ -35,6 +38,153 @@ class UrduSentimentDataset(Dataset):
 
     def __len__(self):
         return len(self.texts)
+
+    def __getitem__(self, idx):
+        encoding = tokenizer(
+            self.texts[idx],
+            padding='max_length',
+            truncation=True,
+            max_length=128,
+            return_tensors='pt'
+        )
+        return {
+            'input_ids'      : encoding['input_ids'].squeeze(),
+            'attention_mask' : encoding['attention_mask'].squeeze(),
+            'label'          : torch.tensor(self.labels[idx], dtype=torch.long)
+        }
+
+# ── 6. Create datasets ────────────────────────────────────
+train_dataset = UrduSentimentDataset(train_df['clean_message'], train_df['label_id'])
+test_dataset  = UrduSentimentDataset(test_df['clean_message'],  test_df['label_id'])
+
+# ── 7. Create DataLoaders ─────────────────────────────────
+# batch_size=16 means feed 16 samples at a time to the model
+# shuffle=True means mix up the training data each epoch
+train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+test_loader  = DataLoader(test_dataset,  batch_size=16, shuffle=False)
+
+print(f"Train batches: {len(train_loader)}")
+print(f"Test batches : {len(test_loader)}")
+
+# ── 8. Load the model ─────────────────────────────────────
+# AutoModelForSequenceClassification loads xlm-roberta
+# with a classification head on top — 3 outputs for our 3 labels
+# num_labels=3 tells it we have 3 categories
+print("\nLoading model...")
+model = AutoModelForSequenceClassification.from_pretrained(
+    "xlm-roberta-base",
+    num_labels=3
+)
+
+# ── 9. Set up optimizer ───────────────────────────────────
+# AdamW is the standard optimizer for transformers
+# lr is learning rate — 2e-5 is the standard for fine-tuning
+optimizer = AdamW(model.parameters(), lr=2e-5)
+
+# ── 10. Detect CPU or GPU ─────────────────────────────────
+# On the full ~129K-row dataset this MUST run on a GPU (Kaggle T4) —
+# CPU would take far too long.
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Training on: {device}")
+if device.type == 'cpu':
+    print("⚠️  No GPU detected — training on the full dataset on CPU will be very slow.")
+
+# Move model to the device
+model = model.to(device)
+
+# ── 11. Training loop ─────────────────────────────────────
+EPOCHS = 3
+
+print("\n=== TRAINING STARTED ===\n")
+
+for epoch in range(EPOCHS):
+
+    # --- Training phase ---
+    model.train()
+    total_loss = 0
+
+    for batch_num, batch in enumerate(train_loader):
+
+        # Move batch data to same device as model
+        input_ids      = batch['input_ids'].to(device)
+        attention_mask = batch['attention_mask'].to(device)
+        labels         = batch['label'].to(device)
+
+        # optimizer.zero_grad() clears old gradients
+        optimizer.zero_grad()
+
+        # Forward pass — model makes predictions
+        outputs = model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            labels=labels
+        )
+
+        loss = outputs.loss
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
+
+        # Print progress every 200 batches (full dataset has many more batches)
+        if (batch_num + 1) % 200 == 0:
+            print(f"Epoch {epoch+1} | Batch {batch_num+1}/{len(train_loader)} | Loss: {loss.item():.4f}")
+
+    avg_loss = total_loss / len(train_loader)
+    print(f"\nEpoch {epoch+1} complete | Average Loss: {avg_loss:.4f}\n")
+
+    # Save a checkpoint after each epoch in case the session disconnects
+    model.save_pretrained(f'./trained_model_epoch{epoch+1}')
+    tokenizer.save_pretrained(f'./trained_model_epoch{epoch+1}')
+    print(f"✅ Checkpoint saved: ./trained_model_epoch{epoch+1}")
+
+print("=== TRAINING COMPLETE ===")
+print("\nNext step: evaluate accuracy on test set")
+
+# ── 12. Evaluation ────────────────────────────────────────
+from sklearn.metrics import accuracy_score, classification_report
+
+print("\n=== EVALUATING ON TEST SET ===\n")
+
+model.eval()
+
+all_predictions = []
+all_true_labels = []
+
+with torch.no_grad():
+    for batch in test_loader:
+
+        input_ids      = batch['input_ids'].to(device)
+        attention_mask = batch['attention_mask'].to(device)
+        labels         = batch['label'].to(device)
+
+        outputs = model(
+            input_ids=input_ids,
+            attention_mask=attention_mask
+        )
+
+        logits = outputs.logits
+        predictions = torch.argmax(logits, dim=1)
+
+        all_predictions.extend(predictions.cpu().numpy())
+        all_true_labels.extend(labels.cpu().numpy())
+
+# ── 13. Print results ─────────────────────────────────────
+accuracy = accuracy_score(all_true_labels, all_predictions)
+print(f"Overall Accuracy: {accuracy * 100:.2f}%\n")
+
+label_names = ['Positive', 'Negative', 'Neutral']
+print("Per-label breakdown:")
+print(classification_report(
+    all_true_labels,
+    all_predictions,
+    target_names=label_names
+))
+
+# ── Save the final trained model ──────────────────────────
+model.save_pretrained('./trained_model')
+tokenizer.save_pretrained('./trained_model')
+print("\n✅ Final model saved to ./trained_model")        return len(self.texts)
 
     def __getitem__(self, idx):
         encoding = tokenizer(

@@ -187,19 +187,12 @@ tokenizer.save_pretrained('./trained_model')
 print("\n✅ Final model saved to ./trained_model")        
 return len(self.texts)
 
-    def __getitem__(self, idx):
-        encoding = tokenizer(
-            self.texts[idx],
-            padding='max_length',
-            truncation=True,
-            max_length=128,
-            return_tensors='pt'
-        )
-        return {
-            'input_ids'      : encoding['input_ids'].squeeze(),
+def __getitem__(self, idx):
+    encoding = tokenizer(self.texts[idx],padding='max_length',truncation=True,
+            max_length=128,return_tensors='pt')
+    return {'input_ids'      : encoding['input_ids'].squeeze(),
             'attention_mask' : encoding['attention_mask'].squeeze(),
-            'label'          : torch.tensor(self.labels[idx], dtype=torch.long)
-        }
+            'label'          : torch.tensor(self.labels[idx], dtype=torch.long)}
 
 # ── 7. Create datasets ────────────────────────────────────
 train_dataset = UrduSentimentDataset(train_df['clean_message'], train_df['label_id'])

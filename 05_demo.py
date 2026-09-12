@@ -56,4 +56,26 @@ for sentence in test_sentences:
     print(f"Prediction : {label} ({confidence*100:.1f}% confidence)")
     score_line = ", ".join(f"{n}: {p.item()*100:.1f}%" for n, p in zip(label_names, probs))
     print(f"All scores : {score_line}")
+    print()    confidence = probs[predicted_id].item()
+
+    return predicted_label, confidence, probs
+
+# ── 4. Test on fixed example sentences ──────────────────────
+test_sentences = [
+    "ye movie bohut acha tha",
+    "mujhe bilkul pasand nahi aya",
+    "kal market gaya tha",
+    "bohut bura din tha aj",
+    "chalo choro is baat ko",
+    "wah kya baat hai zabardast",
+]
+
+print("=== Roman Urdu Sentiment Demo ===\n")
+
+for sentence in test_sentences:
+    label, confidence, probs = predict_sentiment(sentence)
+    print(f"Text       : {sentence}")
+    print(f"Prediction : {label} ({confidence*100:.1f}% confidence)")
+    score_line = ", ".join(f"{n}: {p.item()*100:.1f}%" for n, p in zip(label_names, probs))
+    print(f"All scores : {score_line}")
     print()

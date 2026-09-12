@@ -64,6 +64,36 @@ for i in range(3):
 
 # ── 6. Save ───────────────────────────────────────────────
 df[['clean_message', 'label']].to_csv('roman_urdu_clean.csv', index=False)
+print("\n✅ Saved to roman_urdu_clean.csv")# Python 3.12+ (PEP 701). Using a plain variable avoids the SyntaxError
+# on Kaggle/Colab, which usually run 3.10/3.11.
+duplicate_count = df.duplicated(subset='clean_message').sum()
+print(f"Duplicates: {duplicate_count}")
+
+# ── 4. Remove bad rows ────────────────────────────────────
+# Remove empty messages
+df = df[df['clean_message'].str.len() > 0]
+
+# Remove messages under 2 words (too short to carry sentiment)
+df = df[df['clean_message'].str.split().str.len() >= 2]
+
+# Remove extreme outliers (over 100 words)
+df = df[df['clean_message'].str.split().str.len() <= 100]
+
+print(f"After cleaning: {len(df)} rows")
+print(f"Removed: {original_len - len(df)} rows")
+
+print("Label distribution after cleaning: ")
+print(df["label"].value_counts())
+
+# ── 5. Preview ────────────────────────────────────────────
+print("\n=== BEFORE vs AFTER ===")
+for i in range(3):
+    print(f"\nOriginal : {df['message'].iloc[i]}")
+    print(f"Cleaned  : {df['clean_message'].iloc[i]}")
+    print(f"Label    : {df['label'].iloc[i]}")
+
+# ── 6. Save ───────────────────────────────────────────────
+df[['clean_message', 'label']].to_csv('roman_urdu_clean.csv', index=False)
 print("\n✅ Saved to roman_urdu_clean.csv")print(f"Duplicates:{df.duplicated(subset="clean_message").sum()}")
 # ── 4. Remove bad rows ────────────────────────────────────
 # Remove empty messages

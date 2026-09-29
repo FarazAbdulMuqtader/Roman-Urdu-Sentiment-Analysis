@@ -1,5 +1,4 @@
 <img width="1277" height="565" alt="Screen Shot 2026-09-28 at 11 18 05 AM" src="https://github.com/user-attachments/assets/e1e462ad-7ced-44f0-bb64-5dffca99d55e" />
-# Roman Urdu NLP — Sentiment Analysis
 
 ```mermaid
 flowchart TD
@@ -8,6 +7,8 @@ flowchart TD
     C --> D["Fine-tune XLM-RoBERTa<br/>3 epochs, Kaggle T4 GPU"]
     D --> E["Evaluate<br/>81% accuracy on 25,876"]
     E --> F["Live demo<br/>Text in, sentiment out"]
+
+# Roman Urdu NLP — Sentiment Analysis
 
     classDef data fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
     classDef prep fill:#EEEDFE,stroke:#534AB7,color:#26215C

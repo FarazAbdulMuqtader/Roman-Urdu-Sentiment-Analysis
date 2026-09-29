@@ -8,8 +8,6 @@ flowchart TD
     D --> E["Evaluate<br/>81% accuracy on 25,876"]
     E --> F["Live demo<br/>Text in, sentiment out"]
 
-# Roman Urdu NLP — Sentiment Analysis
-
     classDef data fill:#F1EFE8,stroke:#5F5E5A,color:#2C2C2A
     classDef prep fill:#EEEDFE,stroke:#534AB7,color:#26215C
     classDef model fill:#E1F5EE,stroke:#0F6E56,color:#04342C
@@ -17,6 +15,9 @@ flowchart TD
     class B,C prep
     class D,E,F model
 ```
+
+# Roman Urdu NLP — Sentiment Analysis
+
 🚀 **[Try the live demo](https://huggingface.co/spaces/FarazAbdulMuqtader/roman-urdu-sentiment-demo)**
 
 A sentiment classification model for Roman Urdu (Urdu written in Latin script), fine-tuned on XLM-RoBERTa. Built to address a low-resource, code-mixed language largely underserved by mainstream NLP tooling.
